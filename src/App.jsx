@@ -3,6 +3,8 @@ import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import confetti from 'canvas-confetti';
 import { STATE_DATA } from './data';
 import { playCorrectSound, playIncorrectSound } from './audio';
+import { collection, addDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { db } from './firebase';
 import './index.css';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
@@ -36,20 +38,32 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(60);
   
   const [targetState, setTargetState] = useState("");
-  const [options, setOptions] = useState([]); // For multiple choice
+  const [options, setOptions] = useState([]);
   const [triviaQuestion, setTriviaQuestion] = useState("");
   
   const [guessedStates, setGuessedStates] = useState({});
   const [gameOver, setGameOver] = useState(false);
   
-  const [musicPlaying, setMusicPlaying] = useState(false);
   const [currentFact, setCurrentFact] = useState(null);
   
   const [unlockedBadges, setUnlockedBadges] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
 
-  const audioRef = useRef(null);
-  const anthemRef = useRef(null);
   const timerRef = useRef(null);
+
+  const fetchLeaderboard = async () => {
+    try {
+      const q = query(collection(db, "usa-map-leaderboard"), orderBy("score", "desc"), limit(5));
+      const querySnapshot = await getDocs(q);
+      const scores = [];
+      querySnapshot.forEach((doc) => {
+        scores.push({ id: doc.id, ...doc.data() });
+      });
+      setLeaderboard(scores);
+    } catch (e) {
+      console.log("Firebase not configured yet");
+    }
+  };
 
   useEffect(() => {
     const savedHighScore = localStorage.getItem("usaMapHighScore");
@@ -58,24 +72,12 @@ function App() {
     const savedBadges = JSON.parse(localStorage.getItem("usaMapBadges") || "[]");
     setUnlockedBadges(savedBadges);
 
-    audioRef.current = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg");
-    audioRef.current.loop = true;
-    audioRef.current.volume = 0.05;
-
-    anthemRef.current = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4e/Star_Spangled_Banner_instrumental.ogg");
-    anthemRef.current.volume = 0.08;
-    anthemRef.current.onended = () => {
-      if (musicPlaying) {
-        audioRef.current.play().catch(e => console.log(e));
-      }
-    };
+    fetchLeaderboard();
 
     return () => {
-      if (audioRef.current) audioRef.current.pause();
-      if (anthemRef.current) anthemRef.current.pause();
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [musicPlaying]);
+  }, []);
 
   useEffect(() => {
     if (score > highScore) {
@@ -91,7 +93,7 @@ function App() {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
-            setGameOver(true);
+            triggerGameOver(0);
             return 0;
           }
           return prev - 1;
@@ -116,23 +118,9 @@ function App() {
         const newBadges = [...unlockedBadges, badgeId];
         setUnlockedBadges(newBadges);
         localStorage.setItem("usaMapBadges", JSON.stringify(newBadges));
-        confetti({ particleCount: 150, spread: 80, origin: { y: 0.3 }, colors: ['#facc15'] }); // special golden confetti
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.3 }, colors: ['#facc15'] });
       }
     }
-  };
-
-  const toggleMusic = () => {
-    if (musicPlaying) {
-      audioRef.current.pause();
-      anthemRef.current.pause();
-    } else {
-      if (anthemRef.current.currentTime > 0 && !anthemRef.current.ended) {
-        anthemRef.current.play().catch(e => console.log(e));
-      } else {
-        audioRef.current.play().catch(e => console.log(e));
-      }
-    }
-    setMusicPlaying(!musicPlaying);
   };
 
   const startGame = () => {
@@ -146,10 +134,27 @@ function App() {
     setGuessedStates({});
     setGameOver(false);
     pickNewTarget({});
-    
-    // Play anthem first
-    anthemRef.current.currentTime = 0;
-    anthemRef.current.play().then(() => setMusicPlaying(true)).catch(e => console.log(e));
+  };
+
+  const saveToLeaderboard = async (finalScore) => {
+    if (finalScore > 0 && playerName) {
+      try {
+        await addDoc(collection(db, "usa-map-leaderboard"), {
+          name: playerName,
+          score: finalScore,
+          mode: mode,
+          date: new Date().toISOString()
+        });
+        fetchLeaderboard();
+      } catch (e) {
+        console.log("Firebase error:", e);
+      }
+    }
+  };
+
+  const triggerGameOver = (finalScore) => {
+    setGameOver(true);
+    saveToLeaderboard(finalScore);
   };
 
   const generateMultipleChoice = (correctAnswer, type) => {
@@ -167,7 +172,9 @@ function App() {
   const pickNewTarget = (currentGuessed) => {
     const remaining = STATE_NAMES.filter(s => currentGuessed[s] !== "correct");
     if (remaining.length === 0) {
-      triggerWin();
+      setTargetState("You Win!");
+      confetti({ particleCount: 200, spread: 160, origin: { y: 0.6 } });
+      triggerGameOver(score);
       return;
     }
     const randomState = remaining[Math.floor(Math.random() * remaining.length)];
@@ -181,12 +188,6 @@ function App() {
       setTriviaQuestion(`What is the ${questionType} of this state?`);
       setOptions(generateMultipleChoice(STATE_DATA[randomState][questionType], questionType));
     }
-  };
-
-  const triggerWin = () => {
-    setGameOver(true);
-    setTargetState("You Win!");
-    confetti({ particleCount: 200, spread: 160, origin: { y: 0.6 } });
   };
 
   const handleGuess = (guess) => {
@@ -226,7 +227,8 @@ function App() {
       setStreak(newStreak);
       
       const points = 10 * newStreak;
-      setScore(prev => prev + points);
+      const newScore = score + points;
+      setScore(newScore);
       if (mode === 'TIME_ATTACK') setTimeLeft(prev => prev + 2);
       
       confetti({
@@ -252,7 +254,7 @@ function App() {
       } else {
         setLives(prev => {
           const newLives = prev - 1;
-          if (newLives <= 0) setGameOver(true);
+          if (newLives <= 0) triggerGameOver(score);
           return newLives;
         });
       }
@@ -275,12 +277,9 @@ function App() {
   if (!gameStarted) {
     return (
       <div className="game-container" style={{ justifyContent: 'center' }}>
-        <button className="music-toggle" onClick={toggleMusic}>
-          {musicPlaying ? "🔊" : "🔇"}
-        </button>
         <div className="glass-panel modal">
           <div className="mascot">🦅</div>
-          <h1 className="title" style={{ fontSize: '3rem' }}>USA Map Master</h1>
+          <h1 className="title">USA Map Master</h1>
           
           <input 
             type="text" 
@@ -290,7 +289,7 @@ function App() {
             onChange={(e) => setPlayerName(e.target.value)}
           />
 
-          <h3 style={{ marginTop: '1rem' }}>Select Game Mode</h3>
+          <h3 style={{ marginTop: '0.5rem' }}>Select Game Mode</h3>
           <div className="mode-grid">
             {Object.values(GAME_MODES).map(m => (
               <div 
@@ -315,6 +314,18 @@ function App() {
               </div>
             ))}
           </div>
+
+          {leaderboard.length > 0 && (
+            <div style={{ marginTop: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', width: '100%' }}>
+              <h3 style={{ color: '#facc15', marginBottom: '0.5rem' }}>🌍 Global Leaderboard</h3>
+              {leaderboard.map((entry, i) => (
+                <div key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', padding: '0.2rem 0' }}>
+                  <span>{i + 1}. {entry.name} <span style={{opacity:0.5}}>({entry.mode})</span></span>
+                  <span style={{ fontWeight: 'bold' }}>{entry.score} pts</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -322,17 +333,13 @@ function App() {
 
   return (
     <div className="game-container">
-      <button className="music-toggle" onClick={toggleMusic}>
-        {musicPlaying ? "🔊" : "🔇"}
-      </button>
-
       <div className="header">
         <div className="title-container">
           <span className="mascot">🦅</span>
           <h1 className="title" style={{ fontSize: '2.5rem' }}>{playerName}'s Challenge!</h1>
         </div>
         
-        <div className="glass-panel">
+        <div className="glass-panel" style={{ padding: '0.5rem', gap: '1rem' }}>
           <div className="stat-box">
             <span className="stat-label">Score</span>
             <span className="stat-value">⭐ {score}</span>
@@ -381,7 +388,6 @@ function App() {
                 if (status === "correct") className += " correct";
                 if (status === "incorrect") className += " incorrect";
                 
-                // Highlight target state in Reverse or Trivia mode
                 if ((mode === 'REVERSE' || mode === 'TRIVIA') && stateName === targetState && !currentFact) {
                   className += " target-highlight";
                 }
@@ -447,11 +453,19 @@ function App() {
               <span className="stat-label">Final Score</span>
               <span className="stat-value" style={{ fontSize: '3rem' }}>⭐ {score}</span>
             </div>
-            {score >= highScore && score > 0 && (
-              <div style={{ color: '#facc15', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                🌟 New High Score! 🌟
+            
+            {leaderboard.length > 0 && (
+              <div style={{ margin: '1rem 0', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', width: '100%' }}>
+                <h3 style={{ color: '#facc15', marginBottom: '0.5rem' }}>🌍 Top Players</h3>
+                {leaderboard.slice(0,3).map((entry, i) => (
+                  <div key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', padding: '0.2rem 0' }}>
+                    <span>{i + 1}. {entry.name}</span>
+                    <span style={{ fontWeight: 'bold' }}>{entry.score} pts</span>
+                  </div>
+                ))}
               </div>
             )}
+
             <button className="btn-primary" onClick={() => setGameStarted(false)}>
               Back to Menu ↩️
             </button>
