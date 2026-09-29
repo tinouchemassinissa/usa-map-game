@@ -192,6 +192,19 @@ body {
   animation: pulseColor 1.5s infinite;
 }
 
+.state-path.win-animation {
+  fill: url(#us-flag) !important;
+  stroke: #fff;
+  stroke-width: 0.5;
+  animation: waveFlag 3s infinite ease-in-out;
+}
+
+@keyframes waveFlag {
+  0% { filter: brightness(1) drop-shadow(0 0 10px rgba(255,255,255,0.2)); transform: translateY(0); }
+  50% { filter: brightness(1.2) drop-shadow(0 0 20px rgba(255,255,255,0.6)); transform: translateY(-5px); }
+  100% { filter: brightness(1) drop-shadow(0 0 10px rgba(255,255,255,0.2)); transform: translateY(0); }
+}
+
 @keyframes pulseColor {
   0%, 100% { fill: var(--state-target); }
   50% { fill: #93c5fd; }

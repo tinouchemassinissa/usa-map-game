@@ -77,21 +77,20 @@ function App() {
 
     fetchLeaderboard();
 
-    audioRef.current = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg");
-    audioRef.current.loop = true;
-    audioRef.current.volume = 0.05;
+    const bgMusic = document.getElementById('bg-music');
+    const anthemMusic = document.getElementById('anthem-audio');
 
-    anthemRef.current = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4e/Star_Spangled_Banner_instrumental.ogg");
-    anthemRef.current.volume = 0.08;
-    anthemRef.current.onended = () => {
-      if (musicPlaying) {
-        audioRef.current.play().catch(e => console.log(e));
-      }
-    };
+    if (bgMusic) bgMusic.volume = 0.05;
+    if (anthemMusic) {
+      anthemMusic.volume = 0.08;
+      anthemMusic.onended = () => {
+        if (musicPlaying && bgMusic) {
+          bgMusic.play().catch(e => console.log(e));
+        }
+      };
+    }
 
     return () => {
-      if (audioRef.current) audioRef.current.pause();
-      if (anthemRef.current) anthemRef.current.pause();
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [musicPlaying]);
@@ -141,14 +140,17 @@ function App() {
   };
 
   const toggleMusic = () => {
+    const bgMusic = document.getElementById('bg-music');
+    const anthemMusic = document.getElementById('anthem-audio');
+    
     if (musicPlaying) {
-      audioRef.current.pause();
-      anthemRef.current.pause();
+      if (bgMusic) bgMusic.pause();
+      if (anthemMusic) anthemMusic.pause();
     } else {
-      if (anthemRef.current.currentTime > 0 && !anthemRef.current.ended) {
-        anthemRef.current.play().catch(e => console.log(e));
-      } else {
-        audioRef.current.play().catch(e => console.log(e));
+      if (anthemMusic && anthemMusic.currentTime > 0 && !anthemMusic.ended) {
+        anthemMusic.play().catch(e => console.log(e));
+      } else if (bgMusic) {
+        bgMusic.play().catch(e => console.log(e));
       }
     }
     setMusicPlaying(!musicPlaying);
@@ -167,8 +169,11 @@ function App() {
     pickNewTarget({});
     
     // Play anthem first
-    anthemRef.current.currentTime = 0;
-    anthemRef.current.play().then(() => setMusicPlaying(true)).catch(e => console.log(e));
+    const anthemMusic = document.getElementById('anthem-audio');
+    if (anthemMusic) {
+      anthemMusic.currentTime = 0;
+      anthemMusic.play().then(() => setMusicPlaying(true)).catch(e => console.log("Audio block:", e));
+    }
   };
 
   const saveToLeaderboard = async (finalScore) => {
@@ -419,6 +424,11 @@ function App() {
 
       <div className="map-container">
         <ComposableMap projection="geoAlbersUsa">
+          <defs>
+            <pattern id="us-flag" patternUnits="userSpaceOnUse" width="1000" height="600">
+              <image href="https://flagcdn.com/w1280/us.png" x="0" y="0" width="1000" height="600" preserveAspectRatio="xMidYMid slice" />
+            </pattern>
+          </defs>
           <Geographies geography={geoUrl}>
             {({ geographies }) =>
               geographies.map((geo) => {
@@ -431,6 +441,10 @@ function App() {
                 
                 if ((mode === 'REVERSE' || mode === 'TRIVIA') && stateName === targetState && !currentFact) {
                   className += " target-highlight";
+                }
+
+                if (targetState === "You Win!") {
+                  className = "state-path win-animation";
                 }
 
                 return (
@@ -451,6 +465,10 @@ function App() {
           </Geographies>
         </ComposableMap>
       </div>
+
+      {/* Hidden Audio Elements for better browser support */}
+      <audio id="anthem-audio" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Star_Spangled_Banner_instrumental.ogg" preload="auto"></audio>
+      <audio id="bg-music" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg" loop preload="auto"></audio>
 
       {!gameOver && !currentFact && (mode === 'REVERSE' || mode === 'TRIVIA') && (
         <div className="options-grid">
