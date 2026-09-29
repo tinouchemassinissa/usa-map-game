@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti';
 import { STATE_DATA } from './data';
 import { playCorrectSound, playIncorrectSound } from './audio';
 import { collection, addDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import ReactPlayer from 'react-player/youtube';
 import { db } from './firebase';
 import './index.css';
 
@@ -45,6 +46,10 @@ function App() {
   const [gameOver, setGameOver] = useState(false);
   
   const [currentFact, setCurrentFact] = useState(null);
+
+  // Audio Playback State for ReactPlayer
+  const [playYankee, setPlayYankee] = useState(false);
+  const [playAnthem, setPlayAnthem] = useState(false);
   
   const [unlockedBadges, setUnlockedBadges] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -140,20 +145,19 @@ function App() {
   };
 
   const toggleMusic = () => {
-    const bgMusic = document.getElementById('bg-music');
-    const anthemMusic = document.getElementById('anthem-audio');
-    
     if (musicPlaying) {
-      if (bgMusic) bgMusic.pause();
-      if (anthemMusic) anthemMusic.pause();
+      setMusicPlaying(false);
+      setPlayYankee(false);
+      setPlayAnthem(false);
     } else {
-      if (anthemMusic && anthemMusic.currentTime > 0 && !anthemMusic.ended) {
-        anthemMusic.play().catch(e => console.log(e));
-      } else if (bgMusic) {
-        bgMusic.play().catch(e => console.log(e));
+      setMusicPlaying(true);
+      // Determine what to resume
+      if (targetState === "You Win!") {
+        setPlayAnthem(true);
+      } else {
+        setPlayYankee(true);
       }
     }
-    setMusicPlaying(!musicPlaying);
   };
 
   const startGame = () => {
@@ -168,12 +172,10 @@ function App() {
     setGameOver(false);
     pickNewTarget({});
     
-    // Play anthem first
-    const anthemMusic = document.getElementById('anthem-audio');
-    if (anthemMusic) {
-      anthemMusic.currentTime = 0;
-      anthemMusic.play().then(() => setMusicPlaying(true)).catch(e => console.log("Audio block:", e));
-    }
+    // Play Yankee Doodle via ReactPlayer
+    setPlayAnthem(false);
+    setPlayYankee(true);
+    setMusicPlaying(true);
   };
 
   const saveToLeaderboard = async (finalScore) => {
@@ -214,13 +216,8 @@ function App() {
     if (remaining.length === 0) {
       setTargetState("You Win!");
       
-      const anthemMusic = document.getElementById('anthem-audio');
-      const bgMusic = document.getElementById('bg-music');
-      if (bgMusic) bgMusic.pause();
-      if (anthemMusic) {
-        anthemMusic.currentTime = 0;
-        anthemMusic.play().catch(e => console.log(e));
-      }
+      setPlayYankee(false);
+      setPlayAnthem(true);
       
       const duration = 50 * 1000;
       const animationEnd = Date.now() + duration;
@@ -337,9 +334,20 @@ function App() {
 
   return (
     <div className="game-wrapper" style={{ width: '100vw', height: '100vh' }}>
-      {/* Hidden Audio Elements for better browser support - ALWAYS MOUNTED */}
-      <audio id="anthem-audio" src="https://upload.wikimedia.org/wikipedia/commons/transcoded/4/4e/Star_Spangled_Banner_instrumental.ogg/Star_Spangled_Banner_instrumental.ogg.mp3" preload="auto"></audio>
-      <audio id="bg-music" src="https://upload.wikimedia.org/wikipedia/commons/transcoded/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg/Yankee_Doodle_-_United_States_Army_Band.ogg.mp3" loop preload="auto"></audio>
+      {/* Invisible YouTube Players for 100% Reliable Cross-Browser Audio */}
+      <div style={{ display: 'none' }}>
+        <ReactPlayer 
+          url="https://www.youtube.com/watch?v=0bb29ef34f57f0aa" 
+          playing={playYankee} 
+          loop={true} 
+          volume={0.5}
+        />
+        <ReactPlayer 
+          url="https://www.youtube.com/watch?v=vPKp29Luryc" 
+          playing={playAnthem} 
+          volume={0.8}
+        />
+      </div>
 
       {!gameStarted ? (
         <div className="game-container" style={{ justifyContent: 'center' }}>
