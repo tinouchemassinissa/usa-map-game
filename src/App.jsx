@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import { STATE_DATA } from './data';
 import { playCorrectSound, playIncorrectSound } from './audio';
 import { collection, addDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import ReactPlayer from 'react-player/youtube';
+import ReactPlayer from 'react-player';
 import { db } from './firebase';
 import './index.css';
 
