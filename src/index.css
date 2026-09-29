@@ -196,7 +196,7 @@ body {
   fill: url(#us-flag) !important;
   stroke: #fff;
   stroke-width: 0.5;
-  animation: waveFlag 3s infinite ease-in-out;
+  animation: waveFlag 50s infinite ease-in-out;
 }
 
 @keyframes waveFlag {

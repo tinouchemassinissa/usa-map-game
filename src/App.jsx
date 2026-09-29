@@ -213,8 +213,29 @@ function App() {
     const remaining = STATE_NAMES.filter(s => currentGuessed[s] !== "correct");
     if (remaining.length === 0) {
       setTargetState("You Win!");
-      confetti({ particleCount: 200, spread: 160, origin: { y: 0.6 } });
-      triggerGameOver(score);
+      
+      const anthemMusic = document.getElementById('anthem-audio');
+      const bgMusic = document.getElementById('bg-music');
+      if (bgMusic) bgMusic.pause();
+      if (anthemMusic) {
+        anthemMusic.currentTime = 0;
+        anthemMusic.play().catch(e => console.log(e));
+      }
+      
+      const duration = 50 * 1000;
+      const animationEnd = Date.now() + duration;
+      const interval = setInterval(function() {
+        var timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+        var particleCount = 50 * (timeLeft / duration);
+        confetti({ startVelocity: 30, spread: 360, ticks: 60, zIndex: 0, particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } });
+      }, 250);
+
+      setTimeout(() => {
+        triggerGameOver(score);
+      }, 50000);
       return;
     }
     const randomState = remaining[Math.floor(Math.random() * remaining.length)];
@@ -314,10 +335,15 @@ function App() {
     pickNewTarget(guessedStates);
   };
 
-  if (!gameStarted) {
-    return (
-      <div className="game-container" style={{ justifyContent: 'center' }}>
-        <button className="music-toggle" onClick={toggleMusic}>
+  return (
+    <div className="game-wrapper" style={{ width: '100vw', height: '100vh' }}>
+      {/* Hidden Audio Elements for better browser support - ALWAYS MOUNTED */}
+      <audio id="anthem-audio" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Star_Spangled_Banner_instrumental.ogg" preload="auto"></audio>
+      <audio id="bg-music" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg" loop preload="auto"></audio>
+
+      {!gameStarted ? (
+        <div className="game-container" style={{ justifyContent: 'center' }}>
+          <button className="music-toggle" onClick={toggleMusic}>
           {musicPlaying ? "🔊" : "🔇"}
         </button>
         <div className="glass-panel modal">
@@ -371,14 +397,11 @@ function App() {
           )}
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="game-container">
-      <button className="music-toggle" onClick={toggleMusic}>
-        {musicPlaying ? "🔊" : "🔇"}
-      </button>
+      ) : (
+      <div className="game-container">
+        <button className="music-toggle" onClick={toggleMusic}>
+          {musicPlaying ? "🔊" : "🔇"}
+        </button>
       <div className="header">
         <div className="title-container">
           <span className="mascot">🦅</span>
@@ -466,10 +489,6 @@ function App() {
         </ComposableMap>
       </div>
 
-      {/* Hidden Audio Elements for better browser support */}
-      <audio id="anthem-audio" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Star_Spangled_Banner_instrumental.ogg" preload="auto"></audio>
-      <audio id="bg-music" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg" loop preload="auto"></audio>
-
       {!gameOver && !currentFact && (mode === 'REVERSE' || mode === 'TRIVIA') && (
         <div className="options-grid">
           {options.map((opt, i) => (
@@ -530,6 +549,8 @@ function App() {
             </button>
           </div>
         </div>
+      )}
+      </div>
       )}
     </div>
   );
