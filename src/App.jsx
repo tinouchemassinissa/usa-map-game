@@ -48,8 +48,11 @@ function App() {
   
   const [unlockedBadges, setUnlockedBadges] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [musicPlaying, setMusicPlaying] = useState(false);
 
   const timerRef = useRef(null);
+  const audioRef = useRef(null);
+  const anthemRef = useRef(null);
 
   const fetchLeaderboard = async () => {
     try {
@@ -74,10 +77,24 @@ function App() {
 
     fetchLeaderboard();
 
+    audioRef.current = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg");
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.05;
+
+    anthemRef.current = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4e/Star_Spangled_Banner_instrumental.ogg");
+    anthemRef.current.volume = 0.08;
+    anthemRef.current.onended = () => {
+      if (musicPlaying) {
+        audioRef.current.play().catch(e => console.log(e));
+      }
+    };
+
     return () => {
+      if (audioRef.current) audioRef.current.pause();
+      if (anthemRef.current) anthemRef.current.pause();
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [musicPlaying]);
 
   useEffect(() => {
     if (score > highScore) {
@@ -123,6 +140,20 @@ function App() {
     }
   };
 
+  const toggleMusic = () => {
+    if (musicPlaying) {
+      audioRef.current.pause();
+      anthemRef.current.pause();
+    } else {
+      if (anthemRef.current.currentTime > 0 && !anthemRef.current.ended) {
+        anthemRef.current.play().catch(e => console.log(e));
+      } else {
+        audioRef.current.play().catch(e => console.log(e));
+      }
+    }
+    setMusicPlaying(!musicPlaying);
+  };
+
   const startGame = () => {
     const finalName = playerName.trim() || "Explorer";
     setPlayerName(finalName);
@@ -134,6 +165,10 @@ function App() {
     setGuessedStates({});
     setGameOver(false);
     pickNewTarget({});
+    
+    // Play anthem first
+    anthemRef.current.currentTime = 0;
+    anthemRef.current.play().then(() => setMusicPlaying(true)).catch(e => console.log(e));
   };
 
   const saveToLeaderboard = async (finalScore) => {
@@ -277,6 +312,9 @@ function App() {
   if (!gameStarted) {
     return (
       <div className="game-container" style={{ justifyContent: 'center' }}>
+        <button className="music-toggle" onClick={toggleMusic}>
+          {musicPlaying ? "🔊" : "🔇"}
+        </button>
         <div className="glass-panel modal">
           <div className="mascot">🦅</div>
           <h1 className="title">USA Map Master</h1>
@@ -333,6 +371,9 @@ function App() {
 
   return (
     <div className="game-container">
+      <button className="music-toggle" onClick={toggleMusic}>
+        {musicPlaying ? "🔊" : "🔇"}
+      </button>
       <div className="header">
         <div className="title-container">
           <span className="mascot">🦅</span>
