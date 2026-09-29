@@ -338,8 +338,8 @@ function App() {
   return (
     <div className="game-wrapper" style={{ width: '100vw', height: '100vh' }}>
       {/* Hidden Audio Elements for better browser support - ALWAYS MOUNTED */}
-      <audio id="anthem-audio" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Star_Spangled_Banner_instrumental.ogg" preload="auto"></audio>
-      <audio id="bg-music" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg" loop preload="auto"></audio>
+      <audio id="anthem-audio" src="https://upload.wikimedia.org/wikipedia/commons/transcoded/4/4e/Star_Spangled_Banner_instrumental.ogg/Star_Spangled_Banner_instrumental.ogg.mp3" preload="auto"></audio>
+      <audio id="bg-music" src="https://upload.wikimedia.org/wikipedia/commons/transcoded/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg/Yankee_Doodle_-_United_States_Army_Band.ogg.mp3" loop preload="auto"></audio>
 
       {!gameStarted ? (
         <div className="game-container" style={{ justifyContent: 'center' }}>
