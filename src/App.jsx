@@ -1,60 +1,118 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import confetti from 'canvas-confetti';
-import { STATE_FACTS } from './facts';
+import { STATE_DATA } from './data';
 import { playCorrectSound, playIncorrectSound } from './audio';
 import './index.css';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+const STATE_NAMES = Object.keys(STATE_DATA);
 
-const STATE_NAMES = Object.keys(STATE_FACTS);
+const GAME_MODES = {
+  CLASSIC: { id: 'CLASSIC', title: 'Classic', desc: 'Find the state on the map.' },
+  TIME_ATTACK: { id: 'TIME_ATTACK', title: 'Time Attack', desc: '60 seconds. Go fast!' },
+  REVERSE: { id: 'REVERSE', title: 'Reverse', desc: 'Map highlights a state. Pick its name.' },
+  CAPITALS: { id: 'CAPITALS', title: 'Capitals', desc: 'Find the state by its Capital.' },
+  TRIVIA: { id: 'TRIVIA', title: 'Trivia', desc: 'State is highlighted. Answer a fact!' }
+};
+
+const BADGES = [
+  { id: 'classic', icon: '🗺️', label: 'Classic Explorer (Score 200+)' },
+  { id: 'speedster', icon: '⏱️', label: 'Speedster (Time Attack 200+)' },
+  { id: 'geographer', icon: '📍', label: 'Geographer (Reverse 200+)' },
+  { id: 'president', icon: '🏛️', label: 'President (Capitals 200+)' },
+  { id: 'brainiac', icon: '🧠', label: 'Brainiac (Trivia 200+)' }
+];
 
 function App() {
   const [playerName, setPlayerName] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
+  const [mode, setMode] = useState(GAME_MODES.CLASSIC.id);
+  
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [lives, setLives] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(60);
+  
   const [targetState, setTargetState] = useState("");
+  const [options, setOptions] = useState([]); // For multiple choice
+  const [triviaQuestion, setTriviaQuestion] = useState("");
+  
   const [guessedStates, setGuessedStates] = useState({});
   const [gameOver, setGameOver] = useState(false);
   
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [currentFact, setCurrentFact] = useState(null);
+  
+  const [unlockedBadges, setUnlockedBadges] = useState([]);
 
   const audioRef = useRef(null);
+  const timerRef = useRef(null);
 
   useEffect(() => {
-    // Load high score from local storage
     const savedHighScore = localStorage.getItem("usaMapHighScore");
     if (savedHighScore) setHighScore(parseInt(savedHighScore, 10));
+    
+    const savedBadges = JSON.parse(localStorage.getItem("usaMapBadges") || "[]");
+    setUnlockedBadges(savedBadges);
 
-    // Initialize funny American music
     audioRef.current = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg");
     audioRef.current.loop = true;
     audioRef.current.volume = 0.05;
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      if (audioRef.current) audioRef.current.pause();
+      if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
   useEffect(() => {
-    // Save high score if we beat it
     if (score > highScore) {
       setHighScore(score);
       localStorage.setItem("usaMapHighScore", score);
     }
-  }, [score, highScore]);
+    checkBadges(score, mode);
+  }, [score, highScore, mode]);
+
+  useEffect(() => {
+    if (gameStarted && !gameOver && !currentFact && mode === 'TIME_ATTACK') {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            setGameOver(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [gameStarted, gameOver, currentFact, mode]);
+
+  const checkBadges = (currentScore, currentMode) => {
+    if (currentScore >= 200) {
+      let badgeId = '';
+      if (currentMode === 'CLASSIC') badgeId = 'classic';
+      if (currentMode === 'TIME_ATTACK') badgeId = 'speedster';
+      if (currentMode === 'REVERSE') badgeId = 'geographer';
+      if (currentMode === 'CAPITALS') badgeId = 'president';
+      if (currentMode === 'TRIVIA') badgeId = 'brainiac';
+      
+      if (badgeId && !unlockedBadges.includes(badgeId)) {
+        const newBadges = [...unlockedBadges, badgeId];
+        setUnlockedBadges(newBadges);
+        localStorage.setItem("usaMapBadges", JSON.stringify(newBadges));
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.3 }, colors: ['#facc15'] }); // special golden confetti
+      }
+    }
+  };
 
   const toggleMusic = () => {
-    if (musicPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play().catch(e => console.log("Audio play failed:", e));
-    }
+    if (musicPlaying) audioRef.current.pause();
+    else audioRef.current.play().catch(e => console.log(e));
     setMusicPlaying(!musicPlaying);
   };
 
@@ -65,13 +123,24 @@ function App() {
     setScore(0);
     setStreak(0);
     setLives(3);
+    setTimeLeft(60);
     setGuessedStates({});
     setGameOver(false);
     pickNewTarget({});
     
-    audioRef.current.play().then(() => {
-      setMusicPlaying(true);
-    }).catch(e => console.log("Audio play failed:", e));
+    audioRef.current.play().then(() => setMusicPlaying(true)).catch(e => console.log(e));
+  };
+
+  const generateMultipleChoice = (correctAnswer, type) => {
+    const opts = new Set([correctAnswer]);
+    while(opts.size < 4) {
+      const randState = STATE_NAMES[Math.floor(Math.random() * STATE_NAMES.length)];
+      if (type === 'name') opts.add(randState);
+      else if (type === 'population') opts.add(STATE_DATA[randState].population);
+      else if (type === 'area') opts.add(STATE_DATA[randState].area);
+      else if (type === 'capital') opts.add(STATE_DATA[randState].capital);
+    }
+    return Array.from(opts).sort(() => Math.random() - 0.5);
   };
 
   const pickNewTarget = (currentGuessed) => {
@@ -82,26 +151,52 @@ function App() {
     }
     const randomState = remaining[Math.floor(Math.random() * remaining.length)];
     setTargetState(randomState);
+
+    if (mode === 'REVERSE') {
+      setOptions(generateMultipleChoice(randomState, 'name'));
+    } else if (mode === 'TRIVIA') {
+      const types = ['population', 'area', 'capital'];
+      const questionType = types[Math.floor(Math.random() * types.length)];
+      setTriviaQuestion(`What is the ${questionType} of this state?`);
+      setOptions(generateMultipleChoice(STATE_DATA[randomState][questionType], questionType));
+    }
   };
 
   const triggerWin = () => {
     setGameOver(true);
     setTargetState("You Win!");
-    confetti({
-      particleCount: 200,
-      spread: 160,
-      origin: { y: 0.6 }
-    });
+    confetti({ particleCount: 200, spread: 160, origin: { y: 0.6 } });
   };
 
-  const handleStateClick = (geo) => {
+  const handleGuess = (guess) => {
     if (gameOver || currentFact || !gameStarted) return;
+    
+    let isCorrect = false;
+    
+    if (mode === 'REVERSE') {
+      isCorrect = (guess === targetState);
+    } else if (mode === 'TRIVIA') {
+      const qType = triviaQuestion.includes('population') ? 'population' : triviaQuestion.includes('area') ? 'area' : 'capital';
+      isCorrect = (guess === STATE_DATA[targetState][qType]);
+    } else {
+      isCorrect = (guess === targetState);
+    }
 
+    processAnswer(isCorrect, mode === 'REVERSE' || mode === 'TRIVIA' ? targetState : guess);
+  };
+
+  const handleMapClick = (geo) => {
+    if (mode === 'REVERSE' || mode === 'TRIVIA') return; // In these modes, use buttons
+    if (gameOver || currentFact || !gameStarted) return;
+    
     const stateName = geo.properties.name;
     if (guessedStates[stateName] === "correct" || !STATE_NAMES.includes(stateName)) return;
 
-    if (stateName === targetState) {
-      // Correct guess
+    handleGuess(stateName);
+  };
+
+  const processAnswer = (isCorrect, stateName) => {
+    if (isCorrect) {
       playCorrectSound();
       const newGuessed = { ...guessedStates, [stateName]: "correct" };
       setGuessedStates(newGuessed);
@@ -109,12 +204,12 @@ function App() {
       const newStreak = streak + 1;
       setStreak(newStreak);
       
-      // Calculate score with streak multiplier (base 10 + streak bonus)
       const points = 10 * newStreak;
       setScore(prev => prev + points);
+      if (mode === 'TIME_ATTACK') setTimeLeft(prev => prev + 2);
       
       confetti({
-        particleCount: 50 + (newStreak * 10), // more confetti for higher streaks!
+        particleCount: 50 + (newStreak * 10),
         spread: 60,
         origin: { y: 0.8 },
         colors: ['#22c55e', '#ffffff', '#3b82f6', '#facc15']
@@ -122,28 +217,29 @@ function App() {
 
       setCurrentFact({
         state: stateName,
-        text: STATE_FACTS[stateName] || "This is a wonderful state!",
+        text: STATE_DATA[stateName].fact,
         pointsEarned: points
       });
 
     } else {
-      // Incorrect guess
       playIncorrectSound();
-      setStreak(0); // reset streak
+      setStreak(0);
       setGuessedStates(prev => ({ ...prev, [stateName]: "incorrect" }));
-      setLives(prev => {
-        const newLives = prev - 1;
-        if (newLives <= 0) {
-          setGameOver(true);
-        }
-        return newLives;
-      });
+      
+      if (mode === 'TIME_ATTACK') {
+        setTimeLeft(prev => Math.max(0, prev - 5));
+      } else {
+        setLives(prev => {
+          const newLives = prev - 1;
+          if (newLives <= 0) setGameOver(true);
+          return newLives;
+        });
+      }
+
       setTimeout(() => {
         setGuessedStates(prev => {
           const updated = { ...prev };
-          if (updated[stateName] === "incorrect") {
-            delete updated[stateName];
-          }
+          if (updated[stateName] === "incorrect") delete updated[stateName];
           return updated;
         });
       }, 800);
@@ -161,8 +257,6 @@ function App() {
         <div className="glass-panel modal">
           <div className="mascot">🦅</div>
           <h1 className="title" style={{ fontSize: '3rem' }}>USA Map Master</h1>
-          <h2 style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>Kids Edition!</h2>
-          <p style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>Learn the states, earn combos, and discover fun facts!</p>
           
           <input 
             type="text" 
@@ -170,18 +264,33 @@ function App() {
             placeholder="Enter your name..." 
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && startGame()}
           />
+
+          <h3 style={{ marginTop: '1rem' }}>Select Game Mode</h3>
+          <div className="mode-grid">
+            {Object.values(GAME_MODES).map(m => (
+              <div 
+                key={m.id} 
+                className={`mode-card ${mode === m.id ? 'active' : ''}`}
+                onClick={() => setMode(m.id)}
+              >
+                <div className="mode-title">{m.title}</div>
+                <div className="mode-desc">{m.desc}</div>
+              </div>
+            ))}
+          </div>
 
           <button className="btn-primary" onClick={startGame}>
             Let's Play! 🚀
           </button>
 
-          {highScore > 0 && (
-            <div style={{ marginTop: '1rem', color: '#facc15', fontWeight: 'bold' }}>
-              🏆 All-Time High Score: {highScore}
-            </div>
-          )}
+          <div className="badges-container">
+            {BADGES.map(b => (
+              <div key={b.id} className={`badge ${unlockedBadges.includes(b.id) ? 'unlocked' : ''}`} title={b.label}>
+                {b.icon}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -189,7 +298,7 @@ function App() {
 
   return (
     <div className="game-container">
-      <button className="music-toggle" onClick={toggleMusic} title="Toggle Music">
+      <button className="music-toggle" onClick={toggleMusic}>
         {musicPlaying ? "🔊" : "🔇"}
       </button>
 
@@ -206,20 +315,29 @@ function App() {
           </div>
           <div className="stat-box">
             <span className="stat-label">Streak</span>
-            <span className={`stat-value ${streak >= 3 ? 'streak-text' : ''}`}>
-              🔥 x{streak}
-            </span>
+            <span className={`stat-value ${streak >= 3 ? 'streak-text' : ''}`}>🔥 x{streak}</span>
           </div>
           <div className="stat-box">
-            <span className="stat-label">Lives</span>
-            <span className="stat-value">{"❤️".repeat(Math.max(0, lives))}</span>
+            <span className="stat-label">{mode === 'TIME_ATTACK' ? 'Time' : 'Lives'}</span>
+            <span className={`stat-value ${mode === 'TIME_ATTACK' && timeLeft <= 10 ? 'streak-text' : ''}`} style={mode==='TIME_ATTACK' && timeLeft<=10 ? {color:'#ef4444'}:{}}>
+              {mode === 'TIME_ATTACK' ? `${timeLeft}s ⏳` : "❤️".repeat(Math.max(0, lives))}
+            </span>
           </div>
         </div>
 
         {!gameOver && !currentFact && (
           <div className="target-state-display">
-            <span className="target-label">Can you find...</span>
-            <div className="target-name">{targetState}</div>
+            <span className="target-label">
+              {mode === 'CAPITALS' ? "Find the state where the capital is:" : 
+               mode === 'REVERSE' ? "What state is highlighted on the map?" :
+               mode === 'TRIVIA' ? triviaQuestion :
+               "Can you find..."}
+            </span>
+            <div className="target-name">
+              {mode === 'CAPITALS' ? STATE_DATA[targetState]?.capital : 
+               mode === 'REVERSE' || mode === 'TRIVIA' ? "???" : 
+               targetState}
+            </div>
           </div>
         )}
       </div>
@@ -232,15 +350,26 @@ function App() {
                 const stateName = geo.properties.name;
                 const status = guessedStates[stateName];
                 let className = "state-path";
+                
                 if (status === "correct") className += " correct";
                 if (status === "incorrect") className += " incorrect";
+                
+                // Highlight target state in Reverse or Trivia mode
+                if ((mode === 'REVERSE' || mode === 'TRIVIA') && stateName === targetState && !currentFact) {
+                  className += " target-highlight";
+                }
 
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
                     className={className}
-                    onClick={() => handleStateClick(geo)}
+                    onClick={() => handleMapClick(geo)}
+                    style={{
+                      default: { outline: "none" },
+                      hover: { outline: "none" },
+                      pressed: { outline: "none" },
+                    }}
                   />
                 );
               })
@@ -248,6 +377,16 @@ function App() {
           </Geographies>
         </ComposableMap>
       </div>
+
+      {!gameOver && !currentFact && (mode === 'REVERSE' || mode === 'TRIVIA') && (
+        <div className="options-grid">
+          {options.map((opt, i) => (
+            <button key={i} className="option-btn" onClick={() => handleGuess(opt)}>
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
 
       {currentFact && (
         <div className="overlay">
@@ -257,7 +396,7 @@ function App() {
               +{currentFact.pointsEarned} Points!
             </div>
             <div className="fact-box">
-              <div className="fact-title">💡 Fun Fact about {currentFact.state}</div>
+              <div className="fact-title">💡 Did you know about {currentFact.state}?</div>
               <div className="fact-text">{currentFact.text}</div>
             </div>
             <button className="btn-primary" onClick={closeFactAndNext}>
@@ -270,9 +409,9 @@ function App() {
       {gameOver && (
         <div className="overlay">
           <div className="glass-panel modal">
-            <div className="mascot">{lives <= 0 ? "😢" : "🏆"}</div>
+            <div className="mascot">{(mode === 'TIME_ATTACK' ? timeLeft <= 0 : lives <= 0) ? "😢" : "🏆"}</div>
             <h2 className="title" style={{ fontSize: '3.5rem' }}>
-              {lives <= 0 ? "Game Over" : "You Win!"}
+              {(mode === 'TIME_ATTACK' ? timeLeft <= 0 : lives <= 0) ? "Game Over" : "You Win!"}
             </h2>
             <div className="stat-box" style={{ margin: '1rem 0' }}>
               <span className="stat-label">Final Score</span>
