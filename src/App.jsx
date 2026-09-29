@@ -48,6 +48,7 @@ function App() {
   const [unlockedBadges, setUnlockedBadges] = useState([]);
 
   const audioRef = useRef(null);
+  const anthemRef = useRef(null);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -60,11 +61,21 @@ function App() {
     audioRef.current = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg");
     audioRef.current.loop = true;
     audioRef.current.volume = 0.05;
+
+    anthemRef.current = new Audio("https://upload.wikimedia.org/wikipedia/commons/4/4e/Star_Spangled_Banner_instrumental.ogg");
+    anthemRef.current.volume = 0.08;
+    anthemRef.current.onended = () => {
+      if (musicPlaying) {
+        audioRef.current.play().catch(e => console.log(e));
+      }
+    };
+
     return () => {
       if (audioRef.current) audioRef.current.pause();
+      if (anthemRef.current) anthemRef.current.pause();
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [musicPlaying]);
 
   useEffect(() => {
     if (score > highScore) {
@@ -111,8 +122,16 @@ function App() {
   };
 
   const toggleMusic = () => {
-    if (musicPlaying) audioRef.current.pause();
-    else audioRef.current.play().catch(e => console.log(e));
+    if (musicPlaying) {
+      audioRef.current.pause();
+      anthemRef.current.pause();
+    } else {
+      if (anthemRef.current.currentTime > 0 && !anthemRef.current.ended) {
+        anthemRef.current.play().catch(e => console.log(e));
+      } else {
+        audioRef.current.play().catch(e => console.log(e));
+      }
+    }
     setMusicPlaying(!musicPlaying);
   };
 
@@ -128,7 +147,9 @@ function App() {
     setGameOver(false);
     pickNewTarget({});
     
-    audioRef.current.play().then(() => setMusicPlaying(true)).catch(e => console.log(e));
+    // Play anthem first
+    anthemRef.current.currentTime = 0;
+    anthemRef.current.play().then(() => setMusicPlaying(true)).catch(e => console.log(e));
   };
 
   const generateMultipleChoice = (correctAnswer, type) => {
@@ -254,6 +275,9 @@ function App() {
   if (!gameStarted) {
     return (
       <div className="game-container" style={{ justifyContent: 'center' }}>
+        <button className="music-toggle" onClick={toggleMusic}>
+          {musicPlaying ? "🔊" : "🔇"}
+        </button>
         <div className="glass-panel modal">
           <div className="mascot">🦅</div>
           <h1 className="title" style={{ fontSize: '3rem' }}>USA Map Master</h1>
@@ -333,7 +357,10 @@ function App() {
                mode === 'TRIVIA' ? triviaQuestion :
                "Can you find..."}
             </span>
-            <div className="target-name">
+            <div className="target-name" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {targetState && STATE_DATA[targetState] && mode !== 'REVERSE' && mode !== 'TRIVIA' && mode !== 'CAPITALS' && (
+                <img src={`https://flagcdn.com/w80/us-${STATE_DATA[targetState].code}.png`} alt="flag" style={{ width: '50px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.2)' }} />
+              )}
               {mode === 'CAPITALS' ? STATE_DATA[targetState]?.capital : 
                mode === 'REVERSE' || mode === 'TRIVIA' ? "???" : 
                targetState}
@@ -396,7 +423,10 @@ function App() {
               +{currentFact.pointsEarned} Points!
             </div>
             <div className="fact-box">
-              <div className="fact-title">💡 Did you know about {currentFact.state}?</div>
+              <div className="fact-title">
+                <img src={`https://flagcdn.com/w40/us-${STATE_DATA[currentFact.state].code}.png`} alt="flag" style={{ borderRadius: '2px' }} />
+                💡 Did you know about {currentFact.state}?
+              </div>
               <div className="fact-text">{currentFact.text}</div>
             </div>
             <button className="btn-primary" onClick={closeFactAndNext}>
