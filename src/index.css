@@ -161,6 +161,13 @@ body {
   justify-content: center;
   position: relative;
   z-index: 1;
+  overflow: hidden; /* Prevent map from leaking out of the bounds into other UI elements */
+}
+
+.main-map-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible !important;
 }
 
 .state-path {
