@@ -43,6 +43,7 @@ function App() {
   const [playerName, setPlayerName] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [mode, setMode] = useState(GAME_MODES.CLASSIC.id);
   
@@ -451,7 +452,10 @@ function App() {
   };
 
   const handleInstallClick = async () => {
-    if (!installPrompt) return;
+    if (!installPrompt) {
+      setShowInstallGuide(true);
+      return;
+    }
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
     if (outcome === 'accepted') {
@@ -491,6 +495,24 @@ function App() {
               </div>
             </div>
           )}
+
+          {showInstallGuide && (
+            <div className="overlay" style={{ zIndex: 2000 }}>
+              <div className="glass-panel modal" style={{ maxWidth: '400px', textAlign: 'left' }}>
+                <h2 className="title" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>How to Install</h2>
+                <p style={{ marginBottom: '1rem', lineHeight: '1.5' }}>
+                  Your browser doesn't support automatic installation. To install this app:
+                </p>
+                <ul style={{ marginBottom: '1.5rem', paddingLeft: '1.5rem', lineHeight: '1.5' }}>
+                  <li><strong>iPhone / iPad (Safari):</strong> Tap the <strong>Share</strong> button at the bottom of the screen, then tap <strong>Add to Home Screen</strong>.</li>
+                  <li><strong>Android (Firefox):</strong> Tap the three dots menu, then tap <strong>Install</strong>.</li>
+                  <li><strong>Desktop:</strong> Look for the install icon 💻 in your URL bar!</li>
+                </ul>
+                <button className="btn-primary" onClick={() => setShowInstallGuide(false)}>Got it!</button>
+              </div>
+            </div>
+          )}
+
         <div className="glass-panel modal">
           <div className="mascot">🦅</div>
           <h1 className="title">USA Map Master</h1>
@@ -522,11 +544,9 @@ function App() {
               Let's Play! 🚀
             </button>
             
-            {installPrompt && (
-              <button className="btn-primary" style={{ background: '#10b981' }} onClick={handleInstallClick}>
-                Install App 📲
-              </button>
-            )}
+            <button className="btn-primary" style={{ background: '#10b981' }} onClick={handleInstallClick}>
+              Install App 📲
+            </button>
           </div>
 
           <div className="badges-container">
