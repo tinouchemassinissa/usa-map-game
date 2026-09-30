@@ -89,8 +89,14 @@ function App() {
   };
 
   useEffect(() => {
+    // If the event fired before React loaded, it's saved here
+    if (window.globalInstallPrompt) {
+      setInstallPrompt(window.globalInstallPrompt);
+    }
+
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
+      window.globalInstallPrompt = e;
       setInstallPrompt(e);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
