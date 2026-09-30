@@ -477,7 +477,7 @@ function App() {
 
       {!gameStarted ? (
         <div className="game-container" style={{ justifyContent: 'center' }}>
-          <button className="icon-btn about-btn" onClick={() => setShowAbout(true)} title="About USA Map Master" style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 100 }}>
+          <button className="icon-btn about-btn" onClick={() => setShowAbout(true)} title="About USA State Explorer" style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 100 }}>
             ℹ️
           </button>
           <button className="icon-btn music-toggle" onClick={toggleMusic} title="Toggle Music">
@@ -492,7 +492,7 @@ function App() {
                   <div><strong>Author:</strong> Massinissa TINOUCHE</div>
                   <div><strong>Address:</strong> San Jose, CA USA</div>
                   <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', borderLeft: '4px solid var(--accent-blue)' }}>
-                    <strong>USA Map Master</strong> is an interactive educational PWA designed to help students learn about the 50 US states, their flags, capitals, and geographic regions. Play offline, earn badges, and compete on the global leaderboard!
+                    <strong>USA State Explorer</strong> is an interactive educational PWA designed to help students learn about the 50 US states, their flags, capitals, and geographic regions. Play offline, earn badges, and compete on the global leaderboard!
                   </div>
                 </div>
                 <button className="btn-primary" onClick={() => setShowAbout(false)} style={{ marginTop: '2rem' }}>
@@ -521,7 +521,7 @@ function App() {
 
         <div className="glass-panel modal">
           <div className="mascot">🦅</div>
-          <h1 className="title">USA Map Master</h1>
+          <h1 className="title">USA State Explorer</h1>
           
           <input 
             type="text" 

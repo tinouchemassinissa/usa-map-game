@@ -1,6 +1,6 @@
 {
-  "name": "USA Map Master",
-  "short_name": "Map Master",
+  "name": "USA State Explorer",
+  "short_name": "State Explorer",
   "description": "An interactive map game to learn about the 50 US states, flags, capitals, and regions!",
   "theme_color": "#0f172a",
   "background_color": "#0f172a",
