@@ -472,8 +472,8 @@ function App() {
   return (
     <div className="game-wrapper" style={{ width: '100vw', height: '100vh' }}>
       {/* Hidden Audio Elements for better browser support - ALWAYS MOUNTED */}
-      <audio id="anthem-audio" src="https://archive.org/download/StarSpangledBanner_201310/StarSpangledBanner.mp3" preload="auto"></audio>
-      <audio id="bg-music" src="https://archive.org/download/yankee-doodle/Yankee%20Doodle.mp3" loop preload="auto"></audio>
+      <audio id="anthem-audio" src="/anthem.mp3" preload="auto"></audio>
+      <audio id="bg-music" src="/music.mp3" loop preload="auto"></audio>
 
       {!gameStarted ? (
         <div className="game-container" style={{ justifyContent: 'center' }}>

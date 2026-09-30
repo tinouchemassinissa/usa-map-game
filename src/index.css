@@ -94,6 +94,14 @@ body {
   width: 100%;
 }
 
+.modal {
+  flex-direction: column;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2rem;
+}
+
 .stat-box {
   display: flex;
   flex-direction: column;
