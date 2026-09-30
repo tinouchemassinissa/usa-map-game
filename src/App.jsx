@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import confetti from 'canvas-confetti';
 import { STATE_DATA } from './data';
 import { playCorrectSound, playIncorrectSound } from './audio';
@@ -15,7 +15,9 @@ const GAME_MODES = {
   TIME_ATTACK: { id: 'TIME_ATTACK', title: 'Time Attack', desc: '60 seconds. Go fast!' },
   REVERSE: { id: 'REVERSE', title: 'Reverse', desc: 'Map highlights a state. Pick its name.' },
   CAPITALS: { id: 'CAPITALS', title: 'Capitals', desc: 'Find the state by its Capital.' },
-  TRIVIA: { id: 'TRIVIA', title: 'Trivia', desc: 'State is highlighted. Answer a fact!' }
+  TRIVIA: { id: 'TRIVIA', title: 'Trivia', desc: 'State is highlighted. Answer a fact!' },
+  FLAGS: { id: 'FLAGS', title: 'Flags Game', desc: 'Identify the state by its flag! 🚩' },
+  STUDY: { id: 'STUDY', title: 'Study Guide', desc: 'Relax, click around, and learn! 📚' }
 };
 
 const BADGES = [
@@ -23,7 +25,8 @@ const BADGES = [
   { id: 'speedster', icon: '⏱️', label: 'Speedster (Time Attack 200+)' },
   { id: 'geographer', icon: '📍', label: 'Geographer (Reverse 200+)' },
   { id: 'president', icon: '🏛️', label: 'President (Capitals 200+)' },
-  { id: 'brainiac', icon: '🧠', label: 'Brainiac (Trivia 200+)' }
+  { id: 'brainiac', icon: '🧠', label: 'Brainiac (Trivia 200+)' },
+  { id: 'vexillologist', icon: '🚩', label: 'Vexillologist (Flags 200+)' }
 ];
 
 function App() {
@@ -46,6 +49,8 @@ function App() {
   
   const [currentFact, setCurrentFact] = useState(null);
   
+  const [floatingTexts, setFloatingTexts] = useState([]); // Array of floating text objects
+
   const [unlockedBadges, setUnlockedBadges] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [musicPlaying, setMusicPlaying] = useState(false);
@@ -210,6 +215,11 @@ function App() {
   };
 
   const pickNewTarget = (currentGuessed) => {
+    if (mode === 'STUDY') {
+      setTargetState("Click any state to learn! 📚");
+      return;
+    }
+
     const remaining = STATE_NAMES.filter(s => currentGuessed[s] !== "correct");
     if (remaining.length === 0) {
       setTargetState("You Win!");
@@ -243,6 +253,8 @@ function App() {
 
     if (mode === 'REVERSE') {
       setOptions(generateMultipleChoice(randomState, 'name'));
+    } else if (mode === 'FLAGS') {
+      setOptions(generateMultipleChoice(randomState, 'name'));
     } else if (mode === 'TRIVIA') {
       const types = ['population', 'area', 'capital'];
       const questionType = types[Math.floor(Math.random() * types.length)];
@@ -256,29 +268,65 @@ function App() {
     
     let isCorrect = false;
     
-    if (mode === 'REVERSE') {
-      isCorrect = (guess === targetState);
-    } else if (mode === 'TRIVIA') {
-      const qType = triviaQuestion.includes('population') ? 'population' : triviaQuestion.includes('area') ? 'area' : 'capital';
-      isCorrect = (guess === STATE_DATA[targetState][qType]);
+    if (mode === 'REVERSE' || mode === 'FLAGS' || mode === 'TRIVIA') {
+      const isCorrect = (guess === targetState);
+      processAnswer(isCorrect, targetState, null);
     } else {
-      isCorrect = (guess === targetState);
+      processAnswer(guess === targetState, targetState, null);
+    }
+  };
+
+  const handleMapClick = (geo, evt) => {
+    if (gameOver || currentFact || !gameStarted) return;
+    const stateName = geo.properties.name;
+
+    if (mode === 'STUDY') {
+      if (STATE_NAMES.includes(stateName)) {
+        setCurrentFact({
+          state: stateName,
+          text: STATE_DATA[stateName].fact,
+          pointsEarned: 0
+        });
+      }
+      return;
     }
 
-    processAnswer(isCorrect, mode === 'REVERSE' || mode === 'TRIVIA' ? targetState : guess);
-  };
-
-  const handleMapClick = (geo) => {
-    if (mode === 'REVERSE' || mode === 'TRIVIA') return; // In these modes, use buttons
-    if (gameOver || currentFact || !gameStarted) return;
+    if (mode === 'REVERSE' || mode === 'FLAGS' || mode === 'TRIVIA') return; // In these modes, use buttons
     
-    const stateName = geo.properties.name;
     if (guessedStates[stateName] === "correct" || !STATE_NAMES.includes(stateName)) return;
 
-    handleGuess(stateName);
+    // Pass the click coordinates for the floating combo text
+    handleGuess(stateName, evt);
   };
 
-  const processAnswer = (isCorrect, stateName) => {
+  const handleGuessMap = (guess, evt) => {
+    if (gameOver || currentFact || !gameStarted) return;
+    processAnswer(guess === targetState, guess, evt);
+  };
+
+  const handleMapClickFinal = (geo, evt) => {
+    if (gameOver || currentFact || !gameStarted) return;
+    const stateName = geo.properties.name;
+
+    if (mode === 'STUDY') {
+      if (STATE_NAMES.includes(stateName)) {
+        setCurrentFact({
+          state: stateName,
+          text: STATE_DATA[stateName].fact,
+          pointsEarned: 0
+        });
+      }
+      return;
+    }
+
+    if (mode === 'REVERSE' || mode === 'FLAGS' || mode === 'TRIVIA') return;
+    
+    if (guessedStates[stateName] === "correct" || !STATE_NAMES.includes(stateName)) return;
+
+    handleGuessMap(stateName, evt);
+  };
+
+  const processAnswer = (isCorrect, stateName, evt) => {
     if (isCorrect) {
       playCorrectSound();
       const newGuessed = { ...guessedStates, [stateName]: "correct" };
@@ -291,6 +339,15 @@ function App() {
       const newScore = score + points;
       setScore(newScore);
       if (mode === 'TIME_ATTACK') setTimeLeft(prev => prev + 2);
+      
+      // Floating Combo Text
+      if (evt && evt.clientX) {
+        const id = Date.now();
+        const x = evt.clientX;
+        const y = evt.clientY - 20;
+        setFloatingTexts(prev => [...prev, { id, text: `+${points}`, combo: newStreak >= 3 ? newStreak : null, x, y }]);
+        setTimeout(() => setFloatingTexts(prev => prev.filter(f => f.id !== id)), 1500);
+      }
       
       confetti({
         particleCount: 50 + (newStreak * 10),
@@ -430,15 +487,20 @@ function App() {
             <span className="target-label">
               {mode === 'CAPITALS' ? "Find the state where the capital is:" : 
                mode === 'REVERSE' ? "What state is highlighted on the map?" :
+               mode === 'FLAGS' ? "Which state does this flag belong to?" :
                mode === 'TRIVIA' ? triviaQuestion :
+               mode === 'STUDY' ? "Study Guide Mode Active" :
                "Can you find..."}
             </span>
             <div className="target-name" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {targetState && STATE_DATA[targetState] && mode !== 'REVERSE' && mode !== 'TRIVIA' && mode !== 'CAPITALS' && (
+              {mode === 'FLAGS' && targetState && STATE_DATA[targetState] && (
+                <img src={`https://flagcdn.com/w160/us-${STATE_DATA[targetState].code}.png`} alt="flag" style={{ width: '120px', borderRadius: '8px', border: '2px solid rgba(255,255,255,0.4)', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }} />
+              )}
+              {targetState && STATE_DATA[targetState] && mode !== 'REVERSE' && mode !== 'TRIVIA' && mode !== 'CAPITALS' && mode !== 'FLAGS' && mode !== 'STUDY' && (
                 <img src={`https://flagcdn.com/w80/us-${STATE_DATA[targetState].code}.png`} alt="flag" style={{ width: '50px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.2)' }} />
               )}
               {mode === 'CAPITALS' ? STATE_DATA[targetState]?.capital : 
-               mode === 'REVERSE' || mode === 'TRIVIA' ? "???" : 
+               mode === 'REVERSE' || mode === 'TRIVIA' || mode === 'FLAGS' ? "???" : 
                targetState}
             </div>
           </div>
@@ -452,44 +514,53 @@ function App() {
               <image href="https://flagcdn.com/w1280/us.png" x="0" y="0" width="1000" height="600" preserveAspectRatio="xMidYMid slice" />
             </pattern>
           </defs>
-          <Geographies geography={geoUrl}>
-            {({ geographies }) =>
-              geographies.map((geo) => {
-                const stateName = geo.properties.name;
-                const status = guessedStates[stateName];
-                let className = "state-path";
-                
-                if (status === "correct") className += " correct";
-                if (status === "incorrect") className += " incorrect";
-                
-                if ((mode === 'REVERSE' || mode === 'TRIVIA') && stateName === targetState && !currentFact) {
-                  className += " target-highlight";
-                }
+          <ZoomableGroup zoom={1} minZoom={1} maxZoom={5}>
+            <Geographies geography={geoUrl}>
+              {({ geographies }) =>
+                geographies.map((geo) => {
+                  const stateName = geo.properties.name;
+                  const status = guessedStates[stateName];
+                  let className = "state-path";
+                  
+                  if (status === "correct") className += " correct";
+                  if (status === "incorrect") className += " incorrect";
+                  
+                  if ((mode === 'REVERSE' || mode === 'TRIVIA' || mode === 'FLAGS') && stateName === targetState && !currentFact) {
+                    className += " target-highlight";
+                  }
 
-                if (targetState === "You Win!") {
-                  className = "state-path win-animation";
-                }
+                  if (targetState === "You Win!") {
+                    className = "state-path win-animation";
+                  }
 
-                return (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    className={className}
-                    onClick={() => handleMapClick(geo)}
-                    style={{
-                      default: { outline: "none" },
-                      hover: { outline: "none" },
-                      pressed: { outline: "none" },
-                    }}
-                  />
-                );
-              })
-            }
-          </Geographies>
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      className={className}
+                      onClick={(evt) => handleMapClickFinal(geo, evt)}
+                      style={{
+                        default: { outline: "none" },
+                        hover: { outline: "none" },
+                        pressed: { outline: "none" },
+                      }}
+                    />
+                  );
+                })
+              }
+            </Geographies>
+          </ZoomableGroup>
         </ComposableMap>
+
+        {floatingTexts.map(ft => (
+          <div key={ft.id} className="floating-text" style={{ left: ft.x, top: ft.y }}>
+            {ft.text}
+            {ft.combo && <span className="floating-combo">Combo x{ft.combo}! 🔥</span>}
+          </div>
+        ))}
       </div>
 
-      {!gameOver && !currentFact && (mode === 'REVERSE' || mode === 'TRIVIA') && (
+      {!gameOver && !currentFact && (mode === 'REVERSE' || mode === 'TRIVIA' || mode === 'FLAGS') && (
         <div className="options-grid">
           {options.map((opt, i) => (
             <button key={i} className="option-btn" onClick={() => handleGuess(opt)}>
@@ -504,7 +575,7 @@ function App() {
           <div className="glass-panel modal">
             <h2 className="title" style={{ fontSize: '2.5rem' }}>Awesome! 🎉</h2>
             <div style={{ color: '#22c55e', fontSize: '1.2rem', fontWeight: 'bold' }}>
-              +{currentFact.pointsEarned} Points!
+              {currentFact.pointsEarned > 0 ? `+${currentFact.pointsEarned} Points!` : "Fact Unlocked! 📚"}
             </div>
             <div className="fact-box">
               <div className="fact-title">
