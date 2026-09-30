@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import confetti from 'canvas-confetti';
 import { STATE_DATA } from './data';
 import { playCorrectSound, playIncorrectSound } from './audio';
@@ -514,8 +514,7 @@ function App() {
               <image href="https://flagcdn.com/w1280/us.png" x="0" y="0" width="1000" height="600" preserveAspectRatio="xMidYMid slice" />
             </pattern>
           </defs>
-          <ZoomableGroup zoom={1} minZoom={1} maxZoom={8}>
-            <Geographies geography={geoUrl}>
+          <Geographies geography={geoUrl}>
               {({ geographies }) =>
                 geographies.map((geo) => {
                   const stateName = geo.properties.name;
@@ -549,7 +548,6 @@ function App() {
                 })
               }
             </Geographies>
-          </ZoomableGroup>
         </ComposableMap>
 
         {floatingTexts.map(ft => (
