@@ -54,6 +54,7 @@ function App() {
   const [unlockedBadges, setUnlockedBadges] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [musicPlaying, setMusicPlaying] = useState(false);
+  const [studyData, setStudyData] = useState(null); // Advanced Study Guide Data
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
@@ -310,11 +311,28 @@ function App() {
 
     if (mode === 'STUDY') {
       if (STATE_NAMES.includes(stateName)) {
-        setCurrentFact({
-          state: stateName,
-          text: STATE_DATA[stateName].fact,
-          pointsEarned: 0
-        });
+        setTargetState(stateName);
+        setStudyData({ loading: true, stateName });
+        
+        const searchName = stateName === "Georgia" ? "Georgia_(U.S._state)" : stateName === "New York" ? "New_York_(state)" : stateName === "Washington" ? "Washington_(state)" : stateName.replace(/ /g, '_');
+        
+        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${searchName}`)
+          .then(r => r.json())
+          .then(data => {
+            setStudyData({
+               stateName,
+               extract: data.extract,
+               thumbnail: data.thumbnail?.source || `https://flagcdn.com/w320/us-${STATE_DATA[stateName].code}.png`,
+               url: data.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${searchName}`
+            });
+          }).catch(() => {
+            setStudyData({
+               stateName,
+               extract: STATE_DATA[stateName].fact,
+               thumbnail: `https://flagcdn.com/w320/us-${STATE_DATA[stateName].code}.png`,
+               url: null
+            });
+          });
       }
       return;
     }
@@ -395,8 +413,8 @@ function App() {
   return (
     <div className="game-wrapper" style={{ width: '100vw', height: '100vh' }}>
       {/* Hidden Audio Elements for better browser support - ALWAYS MOUNTED */}
-      <audio id="anthem-audio" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Star_Spangled_Banner_instrumental.ogg" preload="auto"></audio>
-      <audio id="bg-music" src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Yankee_Doodle_-_United_States_Army_Band.ogg" loop preload="auto"></audio>
+      <audio id="anthem-audio" src="https://archive.org/download/StarSpangledBanner_201310/StarSpangledBanner.mp3" preload="auto"></audio>
+      <audio id="bg-music" src="https://archive.org/download/yankee-doodle/Yankee%20Doodle.mp3" loop preload="auto"></audio>
 
       {!gameStarted ? (
         <div className="game-container" style={{ justifyContent: 'center' }}>
@@ -585,6 +603,44 @@ function App() {
             <button className="btn-primary" onClick={closeFactAndNext}>
               Next State ➡️
             </button>
+          </div>
+        </div>
+      )}
+
+      {studyData && (
+        <div className="overlay" style={{ alignItems: 'flex-start', paddingTop: '5vh' }}>
+          <div className="glass-panel modal" style={{ maxWidth: '700px', animation: 'floatUp 0.3s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 className="title" style={{ fontSize: '2.5rem', margin: 0 }}>{studyData.stateName}</h2>
+              <button onClick={() => setStudyData(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer' }}>✖</button>
+            </div>
+            
+            {studyData.loading ? (
+              <div style={{ padding: '3rem', color: '#94a3b8' }}>Fetching official Wikipedia records... 📚</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                  {studyData.thumbnail && (
+                    <img src={studyData.thumbnail} alt={studyData.stateName} style={{ width: '150px', borderRadius: '8px', border: '2px solid rgba(255,255,255,0.2)' }} />
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="stat-label">Capital: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].capital}</span></div>
+                    <div className="stat-label">Population: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].population}</span></div>
+                    <div className="stat-label">Area: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].area}</span></div>
+                  </div>
+                </div>
+                
+                <div className="fact-box" style={{ fontSize: '1.1rem', lineHeight: '1.6', maxHeight: '30vh', overflowY: 'auto' }}>
+                  {studyData.extract}
+                </div>
+                
+                {studyData.url && (
+                  <a href={studyData.url} target="_blank" rel="noreferrer" className="btn-primary" style={{ textDecoration: 'none', textAlign: 'center', background: '#3b82f6' }}>
+                    Read Full History on Wikipedia 📖
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
