@@ -17,7 +17,8 @@ const GAME_MODES = {
   CAPITALS: { id: 'CAPITALS', title: 'Capitals', desc: 'Find the state by its Capital.' },
   TRIVIA: { id: 'TRIVIA', title: 'Trivia', desc: 'State is highlighted. Answer a fact!' },
   FLAGS: { id: 'FLAGS', title: 'Flags Game', desc: 'Identify the state by its flag! 🚩' },
-  STUDY: { id: 'STUDY', title: 'Study Guide', desc: 'Relax, click around, and learn! 📚' }
+  STUDY: { id: 'STUDY', title: 'Study Guide', desc: 'Relax, click around, and learn! 📚' },
+  REGIONS: { id: 'REGIONS', title: 'Region Explorer', desc: 'Click to learn about US regions! 🧭' }
 };
 
 const BADGES = [
@@ -323,6 +324,30 @@ function App() {
       return;
     }
 
+    if (mode === 'REGIONS') {
+      if (STATE_NAMES.includes(stateName)) {
+        const region = STATE_DATA[stateName].region;
+        // Highlight all states in this region
+        const newGuessed = {};
+        const regionStates = [];
+        Object.entries(STATE_DATA).forEach(([name, data]) => {
+          if (data.region === region) {
+            newGuessed[name] = 'correct';
+            regionStates.push(name);
+          }
+        });
+        setGuessedStates(newGuessed);
+        
+        setStudyData({
+          stateName: `${region} Region`,
+          extract: `States in this region: ${regionStates.join(', ')}`,
+          thumbnail: null,
+          url: `https://www.google.com/search?q=US+Census+Bureau+${region}+Region+site:.gov`
+        });
+      }
+      return;
+    }
+
     if (mode === 'REVERSE' || mode === 'FLAGS' || mode === 'TRIVIA') return;
     
     if (guessedStates[stateName] === "correct" || !STATE_NAMES.includes(stateName)) return;
@@ -601,7 +626,10 @@ function App() {
           <div className="glass-panel modal" style={{ maxWidth: '700px', animation: 'floatUp 0.3s ease-out' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className="title" style={{ fontSize: '2.5rem', margin: 0 }}>{studyData.stateName}</h2>
-              <button onClick={() => setStudyData(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer' }}>✖</button>
+              <button onClick={() => {
+                setStudyData(null);
+                if (mode === 'REGIONS') setGuessedStates({});
+              }} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer' }}>✖</button>
             </div>
             
             {studyData.loading ? (
@@ -612,13 +640,15 @@ function App() {
                   {studyData.thumbnail && (
                     <img src={studyData.thumbnail} alt={studyData.stateName} style={{ width: '150px', borderRadius: '8px', border: '2px solid rgba(255,255,255,0.2)' }} />
                   )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div className="stat-label">Capital: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].capital}</span></div>
-                    <div className="stat-label">Population: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].population}</span></div>
-                    <div className="stat-label">Area: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].area}</span></div>
-                    <div className="stat-label">Statehood: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].statehood}</span></div>
-                    <div className="stat-label">Geography: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].geography}</span></div>
-                  </div>
+                  {STATE_DATA[studyData.stateName] && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div className="stat-label">Capital: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].capital}</span></div>
+                      <div className="stat-label">Population: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].population}</span></div>
+                      <div className="stat-label">Area: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].area}</span></div>
+                      <div className="stat-label">Statehood: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].statehood}</span></div>
+                      <div className="stat-label">Geography: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].geography}</span></div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="fact-box" style={{ fontSize: '1.1rem', lineHeight: '1.6', maxHeight: '30vh', overflowY: 'auto' }}>
