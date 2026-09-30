@@ -312,27 +312,13 @@ function App() {
     if (mode === 'STUDY') {
       if (STATE_NAMES.includes(stateName)) {
         setTargetState(stateName);
-        setStudyData({ loading: true, stateName });
         
-        const searchName = stateName === "Georgia" ? "Georgia_(U.S._state)" : stateName === "New York" ? "New_York_(state)" : stateName === "Washington" ? "Washington_(state)" : stateName.replace(/ /g, '_');
-        
-        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${searchName}`)
-          .then(r => r.json())
-          .then(data => {
-            setStudyData({
-               stateName,
-               extract: data.extract,
-               thumbnail: data.thumbnail?.source || `https://flagcdn.com/w320/us-${STATE_DATA[stateName].code}.png`,
-               url: data.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${searchName}`
-            });
-          }).catch(() => {
-            setStudyData({
-               stateName,
-               extract: STATE_DATA[stateName].fact,
-               thumbnail: `https://flagcdn.com/w320/us-${STATE_DATA[stateName].code}.png`,
-               url: null
-            });
-          });
+        setStudyData({
+           stateName,
+           extract: STATE_DATA[stateName].fact,
+           thumbnail: `https://flagcdn.com/w320/us-${STATE_DATA[stateName].code}.png`,
+           url: `https://www.google.com/search?q=${stateName}+state+history+site:.gov+OR+site:.edu`
+        });
       }
       return;
     }
@@ -635,8 +621,8 @@ function App() {
                 </div>
                 
                 {studyData.url && (
-                  <a href={studyData.url} target="_blank" rel="noreferrer" className="btn-primary" style={{ textDecoration: 'none', textAlign: 'center', background: '#3b82f6' }}>
-                    Read Full History on Wikipedia 📖
+                  <a href={studyData.url} target="_blank" rel="noreferrer" className="btn-primary" style={{ textDecoration: 'none', textAlign: 'center', background: '#3b82f6', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🏛️</span> Research Official .gov & .edu Records
                   </a>
                 )}
               </div>
