@@ -9,27 +9,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'USA Map Master',
-        short_name: 'Map Master',
-        description: 'An interactive map game to learn about the 50 US states, flags, capitals, and regions!',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
-        display: 'standalone',
-        icons: [
-          {
-            src: 'pwa-192x192.jpg',
-            sizes: '192x192',
-            type: 'image/jpeg'
-          },
-          {
-            src: 'pwa-512x512.jpg',
-            sizes: '512x512',
-            type: 'image/jpeg',
-            purpose: 'any maskable'
-          }
-        ]
-      },
+      manifest: false,
       workbox: {
         runtimeCaching: [
           {
