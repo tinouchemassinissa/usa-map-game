@@ -586,8 +586,11 @@ function App() {
                       if (region === 'Northeast') className += " region-northeast";
                       
                       // Highlight effect when a region is actively selected
+                      const isAnySelected = Object.keys(guessedStates).length > 0;
                       if (status === "correct") {
                         className += " active-region";
+                      } else if (isAnySelected) {
+                        className += " region-faded";
                       }
                     }
                     
@@ -620,7 +623,7 @@ function App() {
                     if (mode === 'REGIONS' && guessedStates[stateName] === "correct") {
                       return (
                         <Marker key={`${geo.rsmKey}-marker`} coordinates={centroid} style={{ pointerEvents: "none" }}>
-                          <text y="2" fontSize={10} textAnchor="middle" fill="#fff" style={{ fontWeight: 'bold', textShadow: '1px 1px 3px #000, -1px -1px 3px #000' }}>
+                          <text y="2" fontSize={16} textAnchor="middle" fill="#fff" style={{ fontWeight: 'bold', textShadow: '1px 1px 3px #000, -1px -1px 3px #000' }}>
                             {stateName}
                           </text>
                         </Marker>
@@ -674,7 +677,7 @@ function App() {
       )}
 
       {studyData && (
-        <div className="overlay" style={mode === 'REGIONS' ? { alignItems: 'flex-end', paddingBottom: '2rem', pointerEvents: 'none' } : { alignItems: 'flex-start', paddingTop: '5vh' }}>
+        <div className={mode === 'REGIONS' ? 'transparent-overlay' : 'overlay'} style={mode === 'REGIONS' ? { alignItems: 'flex-end', paddingBottom: '2rem', pointerEvents: 'none' } : { alignItems: 'flex-start', paddingTop: '5vh' }}>
           <div className="glass-panel modal" style={{ maxWidth: '700px', animation: 'floatUp 0.3s ease-out', pointerEvents: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className="title" style={{ fontSize: '2.5rem', margin: 0 }}>{studyData.stateName}</h2>
