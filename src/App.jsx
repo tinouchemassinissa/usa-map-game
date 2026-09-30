@@ -404,9 +404,9 @@ function App() {
 
       {!gameStarted ? (
         <div className="game-container" style={{ justifyContent: 'center' }}>
-          <button className="music-toggle" onClick={toggleMusic}>
-          {musicPlaying ? "🔊" : "🔇"}
-        </button>
+          <button className="icon-btn music-toggle" onClick={toggleMusic} title="Toggle Music">
+            {musicPlaying ? "🔊" : "🔇"}
+          </button>
         <div className="glass-panel modal">
           <div className="mascot">🦅</div>
           <h1 className="title">USA Map Master</h1>
@@ -460,7 +460,10 @@ function App() {
       </div>
       ) : (
       <div className="game-container">
-        <button className="music-toggle" onClick={toggleMusic}>
+        <button className="icon-btn home-btn" onClick={() => setGameStarted(false)} title="Back to Menu">
+          🏠
+        </button>
+        <button className="icon-btn music-toggle" onClick={toggleMusic} title="Toggle Music">
           {musicPlaying ? "🔊" : "🔇"}
         </button>
       <div className="header">
