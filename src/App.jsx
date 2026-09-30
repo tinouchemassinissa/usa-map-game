@@ -508,13 +508,13 @@ function App() {
       </div>
 
       <div className="map-container">
-        <ComposableMap projection="geoAlbersUsa">
+        <ComposableMap projection="geoAlbersUsa" width={1000} height={600} style={{ width: "100%", height: "auto" }}>
           <defs>
             <pattern id="us-flag" patternUnits="userSpaceOnUse" width="1000" height="600">
               <image href="https://flagcdn.com/w1280/us.png" x="0" y="0" width="1000" height="600" preserveAspectRatio="xMidYMid slice" />
             </pattern>
           </defs>
-          <ZoomableGroup zoom={1} minZoom={1} maxZoom={5}>
+          <ZoomableGroup zoom={1} minZoom={1} maxZoom={5} translateExtent={[[0, 0], [1000, 600]]}>
             <Geographies geography={geoUrl}>
               {({ geographies }) =>
                 geographies.map((geo) => {
