@@ -1,52 +1,66 @@
-# 🦅 USA Map Master - Kids Edition
+<div align="center">
+  <img src="public/pwa-192x192.png" alt="USA State Explorer Icon" width="120" />
+  
+  # 🦅 USA State Explorer
 
-**USA Map Master** is a highly interactive, beautifully designed educational web application that helps kids (and adults!) learn the geography, capitals, and trivia of the 50 United States of America.
+  **An interactive, offline-capable educational game designed to make learning US Geography fun for kids and adults alike!**
 
-Built with **React**, **Vite**, and **react-simple-maps**, it features a modern glassmorphism UI, satisfying sound effects, and rewarding gameplay loops to make learning incredibly fun.
+  [![Live Demo](https://img.shields.io/badge/Play_Now-Live_Demo-success?style=for-the-badge&logo=vercel)](https://usa-map-game.vercel.app/)
+  [![PWA Ready](https://img.shields.io/badge/PWA-Ready-blue?style=for-the-badge)](https://usa-map-game.vercel.app/)
+</div>
 
-![USA Map Master](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Map_of_USA_with_state_names.svg/800px-Map_of_USA_with_state_names.svg.png)
+---
 
-## ✨ Features
+## 🌟 Features
 
-- **5 Distinct Game Modes**:
-  - **🗺️ Classic**: The standard experience. Find the state by its name before you lose your 3 lives.
-  - **⏱️ Time Attack**: A frantic 60-second dash! Gain +2 seconds for a correct guess, lose -5 seconds for a mistake.
-  - **📍 Reverse**: The map highlights a state in blue, and you must pick the correct name from 4 multiple-choice options.
-  - **🏛️ Capitals**: Test your knowledge by finding the state based entirely on its capital city.
-  - **🧠 Trivia**: The map highlights a state, and you are asked a random multiple-choice trivia question about its population, area, or capital.
-- **🔥 Combo Streaks**: Answer consecutive questions correctly to build your streak multiplier and earn massive points!
-- **🏆 High Score Tracking**: Your highest scores are securely saved locally to your device.
-- **🎖️ Achievement Badges**: Unlock exclusive golden badges on the main menu by scoring 200+ points in specific game modes.
-- **🎵 Interactive Audio**: Features a low-volume, upbeat American marching tune (Yankee Doodle) and responsive sound effects built directly into the Web Audio API.
-- **📱 Fully Responsive**: Custom CSS media queries ensure the game looks and plays perfectly on PCs, Tablets, and Smartphones.
+- **🎮 6 Interactive Game Modes:**
+  - **Classic:** Find the highlighted state on the map.
+  - **Reverse:** The map highlights a state, and you must pick its name.
+  - **Capitals:** Identify the state based on its capital city.
+  - **Trivia:** Answer a fun geographical fact to find the state!
+  - **Flags:** Identify the state based on its official flag.
+  - **Study Guide / Region Explorer:** Relax, click around, and learn about the states and regions at your own pace.
+- **🌍 Global Leaderboard:** Compete with friends and family! Top scores are synchronized in real-time via Firebase.
+- **📲 Progressive Web App (PWA):** Install it directly to your iOS or Android home screen. Fully playable offline!
+- **🏅 Achievement Badges:** Unlock special badges for mastering different modes and achieving high scores.
+- **🎨 Modern UI/UX:** Stunning glassmorphism design, colorful maps, and satisfying victory animations.
 
-## 🚀 Quick Start
+## 🛠️ Tech Stack
 
-To run this project locally on your machine:
+- **Frontend:** React, Vite, CSS (Glassmorphism)
+- **Map Rendering:** `react-simple-maps`, `d3-geo`, TopoJSON
+- **Backend:** Firebase Firestore (for Global Leaderboard)
+- **PWA:** `vite-plugin-pwa`, Workbox (offline caching)
 
-1. **Clone the repository**:
+## 🚀 Getting Started Locally
+
+If you want to run this project on your own machine:
+
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/tinouchemassinissa/usa-map-game.git
    cd usa-map-game
    ```
 
-2. **Install dependencies**:
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. **Start the development server**:
+3. **Start the development server:**
    ```bash
    npm run dev
    ```
 
-4. **Play the game**: Open your browser and navigate to `http://localhost:5173/` (or the port provided by Vite).
+4. **Build for production:**
+   ```bash
+   npm run build
+   ```
 
-## 🛠️ Technology Stack
-- **Framework**: React 19 + Vite
-- **Mapping**: `react-simple-maps` (D3-geo)
-- **Styling**: Vanilla CSS (Glassmorphism, CSS Variables, Flexbox/Grid)
-- **Effects**: `canvas-confetti` & Web Audio API
+## 👨‍💻 Author
 
-## 📝 License
-This project is for educational purposes. Feel free to fork, modify, and deploy!
+Created with passion by **Massinissa TINOUCHE**  
+📍 San Jose, CA USA
+
+---
+*If you like this project, feel free to give it a ⭐!*
