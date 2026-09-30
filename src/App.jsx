@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, ZoomableGroup, Marker } from 'react-simple-maps';
+import { geoCentroid } from 'd3-geo';
 import confetti from 'canvas-confetti';
 import { STATE_DATA } from './data';
 import { playCorrectSound, playIncorrectSound } from './audio';
@@ -9,6 +10,14 @@ import './index.css';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 const STATE_NAMES = Object.keys(STATE_DATA);
+
+const REGION_VIEWS = {
+  "West": { center: [-112, 40], zoom: 2 },
+  "Midwest": { center: [-95, 42], zoom: 2.2 },
+  "Northeast": { center: [-73, 42.5], zoom: 3 },
+  "South": { center: [-88, 33], zoom: 2 }
+};
+const DEFAULT_VIEW = { center: [-96, 38], zoom: 1 };
 
 const GAME_MODES = {
   CLASSIC: { id: 'CLASSIC', title: 'Classic', desc: 'Find the state on the map.' },
@@ -56,6 +65,7 @@ function App() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [studyData, setStudyData] = useState(null); // Advanced Study Guide Data
+  const [mapView, setMapView] = useState(DEFAULT_VIEW);
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
@@ -173,6 +183,8 @@ function App() {
     setTimeLeft(60);
     setGuessedStates({});
     setGameOver(false);
+    setStudyData(null);
+    setMapView(DEFAULT_VIEW);
     pickNewTarget({});
     
     // Play Yankee Doodle via audio element
@@ -219,6 +231,11 @@ function App() {
   const pickNewTarget = (currentGuessed) => {
     if (mode === 'STUDY') {
       setTargetState("Click any state to learn! 📚");
+      return;
+    }
+
+    if (mode === 'REGIONS') {
+      setTargetState("Click a state to explore its Region! 🧭");
       return;
     }
 
@@ -337,6 +354,9 @@ function App() {
           }
         });
         setGuessedStates(newGuessed);
+        if (REGION_VIEWS[region]) {
+          setMapView(REGION_VIEWS[region]);
+        }
         
         setStudyData({
           stateName: `${region} Region`,
@@ -546,40 +566,72 @@ function App() {
               <image href="https://flagcdn.com/w1280/us.png" x="0" y="0" width="1000" height="600" preserveAspectRatio="xMidYMid slice" />
             </pattern>
           </defs>
-          <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => {
-                  const stateName = geo.properties.name;
-                  const status = guessedStates[stateName];
-                  let className = "state-path";
-                  
-                  if (status === "correct") className += " correct";
-                  if (status === "incorrect") className += " incorrect";
-                  
-                  if ((mode === 'REVERSE' || mode === 'TRIVIA' || mode === 'FLAGS') && stateName === targetState && !currentFact) {
-                    className += " target-highlight";
-                  }
+          <ZoomableGroup className="rsm-zoomable-group" zoom={mapView.zoom} center={mapView.center}>
+            <Geographies geography={geoUrl}>
+              {({ geographies }) => (
+                <>
+                  {geographies.map((geo) => {
+                    const stateName = geo.properties.name;
+                    const status = guessedStates[stateName];
+                    let className = "state-path";
+                    
+                    if (status === "correct" && mode !== 'REGIONS') className += " correct";
+                    if (status === "incorrect") className += " incorrect";
+                    
+                    if (mode === 'REGIONS' && STATE_DATA[stateName]) {
+                      const region = STATE_DATA[stateName].region;
+                      if (region === 'West') className += " region-west";
+                      if (region === 'Midwest') className += " region-midwest";
+                      if (region === 'South') className += " region-south";
+                      if (region === 'Northeast') className += " region-northeast";
+                      
+                      // Highlight effect when a region is actively selected
+                      if (status === "correct") {
+                        className += " active-region";
+                      }
+                    }
+                    
+                    if ((mode === 'REVERSE' || mode === 'TRIVIA' || mode === 'FLAGS') && stateName === targetState && !currentFact) {
+                      className += " target-highlight";
+                    }
 
-                  if (targetState === "You Win!") {
-                    className = "state-path win-animation";
-                  }
+                    if (targetState === "You Win!") {
+                      className = "state-path win-animation";
+                    }
 
-                  return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      className={className}
-                      onClick={(evt) => handleMapClickFinal(geo, evt)}
-                      style={{
-                        default: { outline: "none" },
-                        hover: { outline: "none" },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  );
-                })
-              }
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        className={className}
+                        onClick={(evt) => handleMapClickFinal(geo, evt)}
+                        style={{
+                          default: { outline: "none" },
+                          hover: { outline: "none" },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    );
+                  })}
+                  {geographies.map((geo) => {
+                    const centroid = geoCentroid(geo);
+                    const stateName = geo.properties.name;
+                    // Only render labels for highlighted states in REGIONS mode
+                    if (mode === 'REGIONS' && guessedStates[stateName] === "correct") {
+                      return (
+                        <Marker key={`${geo.rsmKey}-marker`} coordinates={centroid} style={{ pointerEvents: "none" }}>
+                          <text y="2" fontSize={10} textAnchor="middle" fill="#fff" style={{ fontWeight: 'bold', textShadow: '1px 1px 3px #000, -1px -1px 3px #000' }}>
+                            {stateName}
+                          </text>
+                        </Marker>
+                      );
+                    }
+                    return null;
+                  })}
+                </>
+              )}
             </Geographies>
+          </ZoomableGroup>
         </ComposableMap>
 
         {floatingTexts.map(ft => (
@@ -622,13 +674,16 @@ function App() {
       )}
 
       {studyData && (
-        <div className="overlay" style={{ alignItems: 'flex-start', paddingTop: '5vh' }}>
-          <div className="glass-panel modal" style={{ maxWidth: '700px', animation: 'floatUp 0.3s ease-out' }}>
+        <div className="overlay" style={mode === 'REGIONS' ? { alignItems: 'flex-end', paddingBottom: '2rem', pointerEvents: 'none' } : { alignItems: 'flex-start', paddingTop: '5vh' }}>
+          <div className="glass-panel modal" style={{ maxWidth: '700px', animation: 'floatUp 0.3s ease-out', pointerEvents: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className="title" style={{ fontSize: '2.5rem', margin: 0 }}>{studyData.stateName}</h2>
               <button onClick={() => {
                 setStudyData(null);
-                if (mode === 'REGIONS') setGuessedStates({});
+                if (mode === 'REGIONS') {
+                  setGuessedStates({});
+                  setMapView(DEFAULT_VIEW);
+                }
               }} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer' }}>✖</button>
             </div>
             
