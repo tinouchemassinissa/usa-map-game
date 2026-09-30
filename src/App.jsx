@@ -613,6 +613,8 @@ function App() {
                     <div className="stat-label">Capital: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].capital}</span></div>
                     <div className="stat-label">Population: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].population}</span></div>
                     <div className="stat-label">Area: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].area}</span></div>
+                    <div className="stat-label">Statehood: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].statehood}</span></div>
+                    <div className="stat-label">Geography: <span className="stat-value" style={{ fontSize: '1.2rem' }}>{STATE_DATA[studyData.stateName].geography}</span></div>
                   </div>
                 </div>
                 
