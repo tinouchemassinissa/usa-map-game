@@ -12,10 +12,10 @@ const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 const STATE_NAMES = Object.keys(STATE_DATA);
 
 const REGION_VIEWS = {
-  "West": { center: [-112, 40], zoom: 2 },
-  "Midwest": { center: [-95, 42], zoom: 2.2 },
-  "Northeast": { center: [-73, 42.5], zoom: 3 },
-  "South": { center: [-88, 33], zoom: 2 }
+  "West": { center: [-112, 38], zoom: 1.5 },
+  "Midwest": { center: [-95, 38], zoom: 1.6 },
+  "Northeast": { center: [-75, 40], zoom: 2.2 },
+  "South": { center: [-88, 30], zoom: 1.6 }
 };
 const DEFAULT_VIEW = { center: [-96, 38], zoom: 1 };
 
@@ -623,7 +623,7 @@ function App() {
                     if (mode === 'REGIONS' && guessedStates[stateName] === "correct") {
                       return (
                         <Marker key={`${geo.rsmKey}-marker`} coordinates={centroid} style={{ pointerEvents: "none" }}>
-                          <text y="2" fontSize={16} textAnchor="middle" fill="#fff" style={{ fontWeight: 'bold', textShadow: '1px 1px 3px #000, -1px -1px 3px #000' }}>
+                          <text y="2" fontSize={11} textAnchor="middle" fill="#fff" style={{ fontWeight: 'bold', textShadow: '1px 1px 3px #000, -1px -1px 3px #000' }}>
                             {stateName}
                           </text>
                         </Marker>
@@ -677,10 +677,10 @@ function App() {
       )}
 
       {studyData && (
-        <div className={mode === 'REGIONS' ? 'transparent-overlay' : 'overlay'} style={mode === 'REGIONS' ? { alignItems: 'flex-end', paddingBottom: '2rem', pointerEvents: 'none' } : { alignItems: 'flex-start', paddingTop: '5vh' }}>
-          <div className="glass-panel modal" style={{ maxWidth: '700px', animation: 'floatUp 0.3s ease-out', pointerEvents: 'auto' }}>
+        <div className={mode === 'REGIONS' ? 'transparent-overlay' : 'overlay'} style={mode === 'REGIONS' ? { pointerEvents: 'none' } : { alignItems: 'flex-start', paddingTop: '5vh' }}>
+          <div className="glass-panel modal" style={mode === 'REGIONS' ? { position: 'absolute', bottom: '2rem', right: '2rem', width: '380px', maxWidth: '90vw', animation: 'floatUp 0.3s ease-out', pointerEvents: 'auto', padding: '1.5rem' } : { maxWidth: '700px', animation: 'floatUp 0.3s ease-out', pointerEvents: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className="title" style={{ fontSize: '2.5rem', margin: 0 }}>{studyData.stateName}</h2>
+              <h2 className="title" style={{ fontSize: mode === 'REGIONS' ? '1.8rem' : '2.5rem', margin: 0 }}>{studyData.stateName}</h2>
               <button onClick={() => {
                 setStudyData(null);
                 if (mode === 'REGIONS') {
@@ -709,7 +709,7 @@ function App() {
                   )}
                 </div>
                 
-                <div className="fact-box" style={{ fontSize: '1.1rem', lineHeight: '1.6', maxHeight: '30vh', overflowY: 'auto' }}>
+                <div className="fact-box" style={{ fontSize: mode === 'REGIONS' ? '0.9rem' : '1.1rem', lineHeight: mode === 'REGIONS' ? '1.4' : '1.6', maxHeight: '30vh', overflowY: 'auto' }}>
                   {studyData.extract}
                 </div>
                 
