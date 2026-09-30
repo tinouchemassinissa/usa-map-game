@@ -42,6 +42,7 @@ const BADGES = [
 function App() {
   const [playerName, setPlayerName] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
   const [mode, setMode] = useState(GAME_MODES.CLASSIC.id);
   
   const [score, setScore] = useState(0);
@@ -86,6 +87,12 @@ function App() {
   };
 
   useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
     const savedHighScore = localStorage.getItem("usaMapHighScore");
     if (savedHighScore) setHighScore(parseInt(savedHighScore, 10));
     
@@ -109,6 +116,7 @@ function App() {
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, [musicPlaying]);
 
@@ -441,6 +449,15 @@ function App() {
     pickNewTarget(guessedStates);
   };
 
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setInstallPrompt(null);
+    }
+  };
+
   return (
     <div className="game-wrapper" style={{ width: '100vw', height: '100vh' }}>
       {/* Hidden Audio Elements for better browser support - ALWAYS MOUNTED */}
@@ -478,9 +495,17 @@ function App() {
             ))}
           </div>
 
-          <button className="btn-primary" onClick={startGame}>
-            Let's Play! 🚀
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button className="btn-primary" onClick={startGame}>
+              Let's Play! 🚀
+            </button>
+            
+            {installPrompt && (
+              <button className="btn-primary" style={{ background: '#10b981' }} onClick={handleInstallClick}>
+                Install App 📲
+              </button>
+            )}
+          </div>
 
           <div className="badges-container">
             {BADGES.map(b => (
