@@ -327,6 +327,167 @@ body {
 }
 
 .music-toggle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+/* Multiple choice options */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+  max-width: 600px;
+  margin-top: 1rem;
+}
+
+.option-btn {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid var(--border-color);
+  color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.option-btn:hover {
+  background: var(--accent-blue);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Game mode cards */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.mode-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-card:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--accent-blue);
+}
+
+.mode-card.active {
+  background: rgba(59, 130, 246, 0.4);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.mode-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.mode-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* Badges */
+.badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+.badge.unlocked {
+  opacity: 1;
+  filter: none;
+  background: rgba(250, 204, 21, 0.2);
+  border: 1px solid #facc15;
+}
+
+@media (max-width: 768px) {
+  .title { font-size: 2rem !important; }
+  .mascot { font-size: 2rem; }
+  .glass-panel { gap: 0.75rem; padding: 1rem; flex-wrap: wrap; width: 100%; }
+  .modal { padding: 1.5rem 1rem; max-height: 98vh; overflow-y: auto; gap: 1rem; }
+  .target-name { font-size: 1.5rem; padding: 0.5rem 1rem; }
+  .game-container { padding: 0.25rem; }
+  .options-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+  .mode-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .mode-card { padding: 0.75rem; }
+  .mode-title { font-size: 1rem; margin-bottom: 0.2rem; }
+  .mode-desc { font-size: 0.75rem; }
+  .btn-primary { padding: 0.75rem 1.5rem; font-size: 1.1rem; }
+  .player-input { padding: 0.5rem 1rem; font-size: 1.2rem; }
+  .badges-container { gap: 0.5rem; }
+  .badge { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+}
+
+@keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } } .floating-text { position: absolute; pointer-events: none; animation: floatUp 1.5s ease-out forwards; font-weight: 800; font-size: 2rem; color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.8), 0 0 20px #000; z-index: 100; text-align: center; } .floating-combo { display: block; font-size: 1.2rem; color: #fb923c; margin-top: -5px; }
+
+.icon-btn {
+  position: fixed;
+  top: 1.5rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--panel-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.home-btn {
+  left: 1.5rem;
+}
+
+.music-toggle {
   right: 1.5rem;
 }
 
