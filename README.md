@@ -5,8 +5,8 @@
 
   **An interactive, offline-capable educational game designed to make learning US Geography fun for kids and adults alike!**
 
-  [![Live Demo](https://img.shields.io/badge/Play_Now-Live_Demo-success?style=for-the-badge&logo=vercel)](https://usa-map-game.vercel.app/)
-  [![PWA Ready](https://img.shields.io/badge/PWA-Ready-blue?style=for-the-badge)](https://usa-map-game.vercel.app/)
+  [![Live Demo](https://img.shields.io/badge/Play_Now-Live_Demo-success?style=for-the-badge&logo=vercel)](https://findthestate.vercel.app/)
+  [![PWA Ready](https://img.shields.io/badge/PWA-Ready-blue?style=for-the-badge)](https://findthestate.vercel.app/)
 </div>
 
 ---
@@ -38,8 +38,8 @@ If you want to run this project on your own machine:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/tinouchemassinissa/usa-map-game.git
-   cd usa-map-game
+   git clone https://github.com/tinouchemassinissa/usamap.git
+   cd usamap
    ```
 
 2. **Install dependencies:**
